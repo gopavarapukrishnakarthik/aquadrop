@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, ChangeEvent } from "react";
 import {
   collection,
   getDocs,
@@ -8,6 +8,20 @@ import {
 } from "firebase/firestore";
 import { db } from "../services/firebase";
 import type { Product } from "../types";
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 const Admin = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -78,148 +92,137 @@ const Admin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 p-8">
-      <h1 className="text-4xl font-bold mb-8 tracking-tight">
-        🛠️ Admin Dashboard
-      </h1>
+    <div className="min-h-screen bg-muted/30 justify-items-center p-8">
+      <h1 className="text-4xl font-bold mb-8">Admin Inventory</h1>
 
-      {/* Add Product Card */}
-      <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8 mb-10">
-        <h2 className="text-2xl font-semibold mb-6">Add New Product</h2>
+      {/* Add Product */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Add New Product</CardTitle>
+        </CardHeader>
 
-        <div className="grid md:grid-cols-2 gap-4">
-          <input
-            type="text"
+        <CardContent className="grid md:grid-cols-2 gap-4">
+          <Input
             placeholder="Product Name"
             value={newProduct.name}
-            onChange={(e) =>
+            onChange={(e: ChangeEvent<HTMLInputElement>) =>
               setNewProduct({
                 ...newProduct,
                 name: e.target.value,
               })
             }
-            className="border border-gray-200 rounded-xl p-4 focus:ring-2 focus:ring-blue-400 outline-none"
           />
 
-          <input
+          <Input
             type="number"
             placeholder="Price"
             value={newProduct.price}
-            onChange={(e) =>
+            onChange={(e: ChangeEvent<HTMLInputElement>) =>
               setNewProduct({
                 ...newProduct,
                 price: Number(e.target.value),
               })
             }
-            className="border border-gray-200 rounded-xl p-4"
           />
 
-          <input
+          <Input
             type="number"
             placeholder="Stock"
             value={newProduct.stock}
-            onChange={(e) =>
+            onChange={(e: ChangeEvent<HTMLInputElement>) =>
               setNewProduct({
                 ...newProduct,
                 stock: Number(e.target.value),
               })
             }
-            className="border border-gray-200 rounded-xl p-4"
           />
 
-          <input
-            type="text"
+          <Input
             placeholder="Category"
             value={newProduct.category}
-            onChange={(e) =>
+            onChange={(e: ChangeEvent<HTMLInputElement>) =>
               setNewProduct({
                 ...newProduct,
                 category: e.target.value,
               })
             }
-            className="border border-gray-200 rounded-xl p-4"
           />
 
-          <input
-            type="text"
+          <Input
             placeholder="Image URL"
             value={newProduct.image}
-            onChange={(e) =>
+            onChange={(e: ChangeEvent<HTMLInputElement>) =>
               setNewProduct({
                 ...newProduct,
                 image: e.target.value,
               })
             }
-            className="border border-gray-200 rounded-xl p-4 md:col-span-2"
+            className="md:col-span-2"
           />
-        </div>
 
-        <button
-          onClick={handleAddProduct}
-          className="mt-6 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl font-medium shadow-lg transition">
-          Add Product
-        </button>
-      </div>
+          <Button onClick={handleAddProduct} className="md:col-span-2">
+            Add Product
+          </Button>
+        </CardContent>
+      </Card>
 
-      {/* Inventory Table */}
-      <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8">
-        <h2 className="text-2xl font-semibold mb-6">Live Inventory</h2>
+      {/* Inventory */}
+      <Card className="w-1/2">
+        <CardHeader>
+          <CardTitle>Live Inventory</CardTitle>
+        </CardHeader>
 
-        {loading ? (
-          <p>Loading inventory...</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b text-left text-gray-600">
-                  <th className="p-4">Image</th>
-                  <th className="p-4">Name</th>
-                  <th className="p-4">Price</th>
-                  <th className="p-4">Category</th>
-                  <th className="p-4">Stock</th>
-                </tr>
-              </thead>
+        <CardContent>
+          {loading ? (
+            <p>Loading inventory...</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Image</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Price</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Stock</TableHead>
+                </TableRow>
+              </TableHeader>
 
-              <tbody>
+              <TableBody>
                 {products.map((product) => (
-                  <tr
-                    key={product.id}
-                    className="border-b hover:bg-gray-50 transition">
-                    <td className="p-4">
+                  <TableRow key={product.id}>
+                    <TableCell>
                       <img
                         src={product.image || "https://dummyimage.com/80x80"}
                         alt={product.name}
-                        className="w-16 h-16 rounded-xl object-cover"
+                        className="w-16 h-16 rounded-lg object-cover"
                       />
-                    </td>
+                    </TableCell>
 
-                    <td className="p-4 font-medium">{product.name}</td>
+                    <TableCell>{product.name}</TableCell>
 
-                    <td className="p-4">₹{product.price}</td>
+                    <TableCell>₹{product.price}</TableCell>
 
-                    <td className="p-4">
-                      <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm">
-                        {product.category}
-                      </span>
-                    </td>
+                    <TableCell>
+                      <Badge>{product.category}</Badge>
+                    </TableCell>
 
-                    <td className="p-4">
-                      <input
+                    <TableCell>
+                      <Input
                         type="number"
                         defaultValue={product.stock}
-                        onBlur={(e) =>
+                        onBlur={(e: ChangeEvent<HTMLInputElement>) =>
                           updateStockInline(product.id, Number(e.target.value))
                         }
-                        className="border rounded-xl px-3 py-2 w-24 text-center"
+                        className="w-24"
                       />
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
