@@ -94,7 +94,7 @@ const Admin = () => {
 
   return (
     <div className="min-h-screen bg-muted/30 justify-items-center p-8">
-      <h1 className="text-4xl font-bold mb-8">Admin Inventory</h1>
+      <h1 className="text-4xl font-bold mb-8">GSR Admin Inventory</h1>
 
       {/* Add Product */}
       <Card className="mb-8">
