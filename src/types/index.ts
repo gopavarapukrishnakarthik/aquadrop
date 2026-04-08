@@ -1,3 +1,5 @@
+import type { Timestamp } from "firebase/firestore";
+
 export type UserRole = "customer" | "admin" | "delivery";
 
 export interface User {
@@ -12,6 +14,10 @@ export interface Product {
   name: string;
   price: number;
   stock: number;
+  sold: number;
+  createdAt: Timestamp,
+  updatedAt: Timestamp,
+  isActive: boolean,
   category: string;
   image?: string;
 }

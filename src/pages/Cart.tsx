@@ -1,12 +1,20 @@
 import { useAppDispatch, useAppSelector } from "../hooks/reduxHooks";
+
 import {
   removeFromCart,
   clearCart,
   updateQuantity,
 } from "../features/cart/cartSlice";
+
 import { placeOrder } from "../features/orders/orderSlice";
+
 import { doc, updateDoc } from "firebase/firestore";
+
 import { db } from "../services/firebase";
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+import { Button } from "@/components/ui/button";
 
 const Cart = () => {
   const dispatch = useAppDispatch();
@@ -17,7 +25,6 @@ const Cart = () => {
     if (!items.length) return;
 
     try {
-      // reduce stock in firestore
       for (const item of items) {
         const productRef = doc(db, "Products", item.id);
 
@@ -45,66 +52,114 @@ const Cart = () => {
   const handleQuantityChange = (id: string, quantity: number) => {
     if (quantity < 1) return;
 
-    dispatch(updateQuantity({ id, quantity }));
+    dispatch(
+      updateQuantity({
+        id,
+        quantity,
+      }),
+    );
   };
 
   return (
-    <div className="p-6 min-h-screen bg-gray-50">
-      <h1 className="text-3xl font-bold mb-6">🛒 Cart</h1>
+    <div className="min-h-screen bg-slate-50 p-8 space-y-8">
+      {/* Header */}
+      <div>
+        <h1 className="text-4xl font-bold tracking-tight">Shopping Cart</h1>
+
+        <p className="text-muted-foreground mt-1">
+          Review your items before placing the order
+        </p>
+      </div>
 
       {items.length === 0 ? (
-        <p>Your cart is empty</p>
+        <Card className="rounded-3xl shadow-sm">
+          <CardContent className="p-8 text-center">
+            <p className="text-muted-foreground text-lg">
+              Your cart is empty 🛒
+            </p>
+          </CardContent>
+        </Card>
       ) : (
-        <>
-          {items.map((item) => (
-            <div key={item.id} className="bg-white shadow rounded-2xl p-4 mb-4">
-              <h2 className="text-xl font-semibold">{item.name}</h2>
+        <div className="grid lg:grid-cols-3 gap-8">
+          {/* Cart Items */}
+          <div className="lg:col-span-2 space-y-6">
+            {items.map((item) => (
+              <Card
+                key={item.id}
+                className="rounded-3xl shadow-sm hover:shadow-md transition-all">
+                <CardContent className="p-6">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h2 className="text-xl font-semibold">{item.name}</h2>
 
-              <p>₹{item.price}</p>
+                      <p className="text-muted-foreground">₹{item.price}</p>
 
-              {/* Quantity controls */}
-              <div className="flex items-center gap-3 mt-3">
-                <button
-                  onClick={() =>
-                    handleQuantityChange(item.id, item.quantity - 1)
-                  }
-                  className="bg-gray-200 px-3 py-1 rounded">
-                  -
-                </button>
+                      <p className="font-medium mt-2">
+                        Total: ₹{item.price * item.quantity}
+                      </p>
+                    </div>
 
-                <span className="font-semibold">{item.quantity}</span>
+                    <Button
+                      variant="destructive"
+                      onClick={() => dispatch(removeFromCart(item.id))}>
+                      Remove
+                    </Button>
+                  </div>
 
-                <button
-                  onClick={() =>
-                    handleQuantityChange(item.id, item.quantity + 1)
-                  }
-                  className="bg-gray-200 px-3 py-1 rounded">
-                  +
-                </button>
-              </div>
+                  {/* Quantity Controls */}
+                  <div className="flex items-center gap-3 mt-5">
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        handleQuantityChange(item.id, item.quantity - 1)
+                      }>
+                      -
+                    </Button>
 
-              <p className="mt-2 font-medium">
-                Total: ₹{item.price * item.quantity}
-              </p>
+                    <span className="font-semibold text-lg">
+                      {item.quantity}
+                    </span>
 
-              <button
-                onClick={() => dispatch(removeFromCart(item.id))}
-                className="mt-3 bg-red-500 text-white px-4 py-2 rounded-lg">
-                Remove
-              </button>
-            </div>
-          ))}
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        handleQuantityChange(item.id, item.quantity + 1)
+                      }>
+                      +
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
 
-          <h2 className="text-2xl font-bold mt-6">
-            Grand Total: ₹{totalAmount}
-          </h2>
+          {/* Order Summary */}
+          <div>
+            <Card className="rounded-3xl shadow-sm sticky top-24">
+              <CardHeader>
+                <CardTitle>Order Summary</CardTitle>
+              </CardHeader>
 
-          <button
-            onClick={handlePlaceOrder}
-            className="mt-4 bg-green-500 text-white px-5 py-3 rounded-xl">
-            Place Order
-          </button>
-        </>
+              <CardContent className="space-y-5">
+                <div className="flex justify-between">
+                  <span>Items</span>
+                  <span>{items.length}</span>
+                </div>
+
+                <div className="flex justify-between">
+                  <span>Grand Total</span>
+                  <span className="font-bold text-xl">₹{totalAmount}</span>
+                </div>
+
+                <Button
+                  className="w-full rounded-xl"
+                  onClick={handlePlaceOrder}>
+                  Place Order
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -1,19 +1,34 @@
 import { useEffect, useState } from "react";
-import type { ChangeEvent } from "react";
-import {
-  collection,
-  getDocs,
-  addDoc,
-  updateDoc,
-  doc,
-} from "firebase/firestore";
-import { db } from "../services/firebase";
 import type { Product } from "../types";
 
+import {
+  fetchProducts as fetchProductsService,
+  addProduct as addProductService,
+  updateProductStock,
+} from "../services/productService";
+
+import {
+  getTotalProducts,
+  getLowStockCount,
+  getLowStockProducts,
+  getTotalRevenue,
+  getBestSellingProducts,
+  getInventoryHealth,
+} from "../services/dashboardService";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 import {
   Table,
@@ -23,6 +38,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+} from "recharts";
 
 const Admin = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -36,187 +62,309 @@ const Admin = () => {
     image: "",
   });
 
-  const fetchProducts = async () => {
-    try {
-      const snapshot = await getDocs(collection(db, "Products"));
-
-      const list: Product[] = snapshot.docs.map((docSnap) => ({
-        id: docSnap.id,
-        ...(docSnap.data() as Omit<Product, "id">),
-      }));
-
-      setProducts(list);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
+  const loadProducts = async () => {
+    setLoading(true);
+    const data = await fetchProductsService();
+    setProducts(data);
+    setLoading(false);
   };
 
   useEffect(() => {
-    fetchProducts();
+    loadProducts();
   }, []);
 
   const handleAddProduct = async () => {
-    try {
-      await addDoc(collection(db, "Products"), {
-        ...newProduct,
-        image: newProduct.image || "https://dummyimage.com/400x300",
-      });
+    await addProductService({
+      ...newProduct,
+      sold: 0,
+    });
 
-      setNewProduct({
-        name: "",
-        price: 0,
-        stock: 0,
-        category: "",
-        image: "",
-      });
+    setNewProduct({
+      name: "",
+      price: 0,
+      stock: 0,
+      category: "",
+      image: "",
+    });
 
-      fetchProducts();
-    } catch (error) {
-      console.error(error);
-    }
+    loadProducts();
   };
 
   const updateStockInline = async (productId: string, stock: number) => {
-    try {
-      const productRef = doc(db, "Products", productId);
+    await updateProductStock(productId, stock);
 
-      await updateDoc(productRef, {
-        stock,
-      });
-
-      fetchProducts();
-    } catch (error) {
-      console.error(error);
-    }
+    setProducts((prev) =>
+      prev.map((product) =>
+        product.id === productId ? { ...product, stock } : product,
+      ),
+    );
   };
 
+  const totalProducts = getTotalProducts(products);
+
+  const lowStockCount = getLowStockCount(products);
+
+  const revenue = getTotalRevenue(products);
+
+  const bestProducts = getBestSellingProducts(products);
+
+  const lowStockProducts = getLowStockProducts(products);
+
+  const health = getInventoryHealth(products);
+
+  const graphData = products.map((product) => ({
+    name: product.name,
+    stock: product.stock,
+    sold: product.sold || 0,
+  }));
+
   return (
-    <div className="min-h-screen bg-muted/30 justify-items-center p-8">
-      <h1 className="text-4xl font-bold mb-8">GSR Admin Inventory</h1>
+    <div className="min-h-screen bg-muted/30 p-8 space-y-8">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-4xl font-bold">GSR Admin Dashboard</h1>
+          <p className="text-muted-foreground">Inventory • Sales • Analytics</p>
+        </div>
 
-      {/* Add Product */}
-      <Card className="mb-8">
+        <div className="flex gap-3">
+          {/* Add Product */}
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button>Add Product</Button>
+            </DialogTrigger>
+
+            <DialogContent className="sm:max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Add New Product</DialogTitle>
+              </DialogHeader>
+
+              <div className="grid gap-4 py-4">
+                <Input
+                  placeholder="Product Name"
+                  value={newProduct.name}
+                  onChange={(e) =>
+                    setNewProduct({
+                      ...newProduct,
+                      name: e.target.value,
+                    })
+                  }
+                />
+
+                <Input
+                  type="number"
+                  placeholder="Price"
+                  value={newProduct.price}
+                  onChange={(e) =>
+                    setNewProduct({
+                      ...newProduct,
+                      price: Number(e.target.value),
+                    })
+                  }
+                />
+
+                <Input
+                  type="number"
+                  placeholder="Stock"
+                  value={newProduct.stock}
+                  onChange={(e) =>
+                    setNewProduct({
+                      ...newProduct,
+                      stock: Number(e.target.value),
+                    })
+                  }
+                />
+
+                <Input
+                  placeholder="Category"
+                  value={newProduct.category}
+                  onChange={(e) =>
+                    setNewProduct({
+                      ...newProduct,
+                      category: e.target.value,
+                    })
+                  }
+                />
+
+                <Input
+                  placeholder="Image URL"
+                  value={newProduct.image}
+                  onChange={(e) =>
+                    setNewProduct({
+                      ...newProduct,
+                      image: e.target.value,
+                    })
+                  }
+                />
+
+                <Button onClick={handleAddProduct}>Save Product</Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Update Inventory */}
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline">Update Inventory</Button>
+            </DialogTrigger>
+
+            <DialogContent className="sm:max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Update Inventory</DialogTitle>
+              </DialogHeader>
+
+              <div className="space-y-4">
+                {products.map((product) => (
+                  <div
+                    key={product.id}
+                    className="flex items-center justify-between gap-4">
+                    <span className="w-40">{product.name}</span>
+
+                    <Input
+                      type="number"
+                      defaultValue={product.stock}
+                      onBlur={(e) =>
+                        updateStockInline(product.id, Number(e.target.value))
+                      }
+                      className="w-24"
+                    />
+                  </div>
+                ))}
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Analytics */}
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="secondary">View Analytics</Button>
+            </DialogTrigger>
+
+            <DialogContent className="max-w-4xl">
+              <DialogHeader>
+                <DialogTitle>Inventory Analytics</DialogTitle>
+              </DialogHeader>
+
+              <div className="space-y-8">
+                <div className="h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={graphData}>
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="stock" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div className="h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={graphData}>
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Line dataKey="sold" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid md:grid-cols-4 gap-6">
+        <Card>
+          <CardContent className="p-6">
+            <p>Total Products</p>
+            <h2 className="text-3xl font-bold">{totalProducts}</h2>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <p>Low Stock Items</p>
+            <h2 className="text-3xl font-bold">{lowStockCount}</h2>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <p>Total Revenue</p>
+            <h2 className="text-3xl font-bold">₹{revenue}</h2>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <p>In Stock</p>
+            <h2 className="text-3xl font-bold">{health.inStock}%</h2>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Best Selling + Low Stock */}
+      <div className="grid md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Best Selling Products</CardTitle>
+          </CardHeader>
+
+          <CardContent className="space-y-4">
+            {bestProducts.map((product) => (
+              <div key={product.id} className="flex justify-between">
+                <span>{product.name}</span>
+                <span>{product.sold || 0} sold</span>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Low Stock Alerts</CardTitle>
+          </CardHeader>
+
+          <CardContent className="space-y-3">
+            {lowStockProducts.map((product) => (
+              <div key={product.id} className="flex justify-between">
+                <span>{product.name}</span>
+
+                <Badge variant="destructive">{product.stock} left</Badge>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Inventory Table */}
+      <Card>
         <CardHeader>
-          <CardTitle>Add New Product</CardTitle>
-        </CardHeader>
-
-        <CardContent className="grid md:grid-cols-2 gap-4">
-          <Input
-            placeholder="Product Name"
-            value={newProduct.name}
-            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              setNewProduct({
-                ...newProduct,
-                name: e.target.value,
-              })
-            }
-          />
-
-          <Input
-            type="number"
-            placeholder="Price"
-            value={newProduct.price}
-            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              setNewProduct({
-                ...newProduct,
-                price: Number(e.target.value),
-              })
-            }
-          />
-
-          <Input
-            type="number"
-            placeholder="Stock"
-            value={newProduct.stock}
-            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              setNewProduct({
-                ...newProduct,
-                stock: Number(e.target.value),
-              })
-            }
-          />
-
-          <Input
-            placeholder="Category"
-            value={newProduct.category}
-            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              setNewProduct({
-                ...newProduct,
-                category: e.target.value,
-              })
-            }
-          />
-
-          <Input
-            placeholder="Image URL"
-            value={newProduct.image}
-            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              setNewProduct({
-                ...newProduct,
-                image: e.target.value,
-              })
-            }
-            className="md:col-span-2"
-          />
-
-          <Button onClick={handleAddProduct} className="md:col-span-2">
-            Add Product
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Inventory */}
-      <Card className="w-1/2">
-        <CardHeader>
-          <CardTitle>Live Inventory</CardTitle>
+          <CardTitle>Live Inventory Table</CardTitle>
         </CardHeader>
 
         <CardContent>
           {loading ? (
-            <p>Loading inventory...</p>
+            <p>Loading...</p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Image</TableHead>
-                  <TableHead>Name</TableHead>
+                  <TableHead>Product</TableHead>
                   <TableHead>Price</TableHead>
-                  <TableHead>Category</TableHead>
                   <TableHead>Stock</TableHead>
+                  <TableHead>Sold</TableHead>
                 </TableRow>
               </TableHeader>
 
               <TableBody>
                 {products.map((product) => (
                   <TableRow key={product.id}>
-                    <TableCell>
-                      <img
-                        src={product.image || "https://dummyimage.com/80x80"}
-                        alt={product.name}
-                        className="w-16 h-16 rounded-lg object-cover"
-                      />
-                    </TableCell>
-
                     <TableCell>{product.name}</TableCell>
-
                     <TableCell>₹{product.price}</TableCell>
-
-                    <TableCell>
-                      <Badge>{product.category}</Badge>
-                    </TableCell>
-
-                    <TableCell>
-                      <Input
-                        type="number"
-                        defaultValue={product.stock}
-                        onBlur={(e: ChangeEvent<HTMLInputElement>) =>
-                          updateStockInline(product.id, Number(e.target.value))
-                        }
-                        className="w-24"
-                      />
-                    </TableCell>
+                    <TableCell>{product.stock}</TableCell>
+                    <TableCell>{product.sold || 0}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
