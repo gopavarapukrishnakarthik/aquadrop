@@ -4,8 +4,8 @@ import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 
 export default defineConfig({
-  base: "/aquadrop/",
   plugins: [react(), tailwindcss()],
+    base: "/aquadrop/",
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
