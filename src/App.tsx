@@ -8,7 +8,7 @@ import Admin from "./pages/Admin";
 
 const App = () => {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/aquadrop">
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/cart" element={<Cart />} />
