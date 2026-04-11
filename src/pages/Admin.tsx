@@ -123,7 +123,7 @@ const Admin = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-4xl font-bold">GSR Admin Dashboard</h1>
+          <h1 className="text-4xl font-bold">AquaDrop Admin Dashboard</h1>
           <p className="text-muted-foreground">Inventory • Sales • Analytics</p>
         </div>
 
@@ -327,13 +327,21 @@ const Admin = () => {
           </CardHeader>
 
           <CardContent className="space-y-3">
-            {lowStockProducts.map((product) => (
-              <div key={product.id} className="flex justify-between">
-                <span>{product.name}</span>
+            {lowStockProducts.length > 0 ? (
+              lowStockProducts.map((product) => (
+                <div
+                  key={product.id}
+                  className="flex justify-between items-center">
+                  <span>{product.name}</span>
 
-                <Badge variant="destructive">{product.stock} left</Badge>
-              </div>
-            ))}
+                  <Badge variant="destructive">{product.stock} left</Badge>
+                </div>
+              ))
+            ) : (
+              <p className="text-green-600 text-sm">
+                All products are well stocked
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>

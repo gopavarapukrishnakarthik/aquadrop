@@ -8,7 +8,7 @@ import {
 
 import { placeOrder } from "../features/orders/orderSlice";
 
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc, increment } from "firebase/firestore";
 
 import { db } from "../services/firebase";
 
@@ -30,6 +30,7 @@ const Cart = () => {
 
         await updateDoc(productRef, {
           stock: item.stock - item.quantity,
+          sold: increment(item.quantity),
         });
       }
 

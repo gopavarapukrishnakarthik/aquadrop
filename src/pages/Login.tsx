@@ -5,6 +5,11 @@ import { demoUsers } from "../utils/demoUsers";
 import { useAppDispatch } from "../hooks/reduxHooks";
 import { loginSuccess } from "../features/auth/authSlice";
 
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+
 const Login = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
@@ -44,7 +49,6 @@ const Login = () => {
 
       await loginUser(email, password);
 
-      // detect role from demo users
       const matchedUser = Object.values(demoUsers).find(
         (user) => user.email === email,
       );
@@ -67,63 +71,83 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
-        <h1 className="text-3xl font-bold text-center mb-6">AquaDrop Login</h1>
+    <div className="min-h-screen relative">
+      {/* Background */}
+      <img
+        src="/aquadrop/aquabg.png"
+        alt="AquaDrop Background"
+        className="absolute inset-0 w-full h-full object-cover"
+      />
 
-        {/* Demo users */}
-        <div className="bg-blue-50 rounded-xl p-4 mb-5">
-          <h2 className="font-semibold mb-2">Demo Login Roles</h2>
+      {/* Login Form */}
+      <div className="relative min-h-screen flex items-center px-6 md:px-16">
+        <Card className="w-full max-w-md bg-white/95 backdrop-blur-md shadow-2xl border-0 py-10 px-5">
+          <CardHeader>
+            <CardTitle className="text-3xl text-center">
+              AquaDrop Login
+            </CardTitle>
+          </CardHeader>
 
-          <p className="text-sm">👤 Customer → Home</p>
-          <p className="text-sm">🛠️ Admin → Inventory</p>
-          <p className="text-sm">🚚 Delivery → Orders</p>
-        </div>
+          <CardContent className="space-y-4">
+            {/* Demo Roles */}
+            <Card className="bg-blue-50 border-none shadow-none">
+              <CardContent className="space-y-1">
+                <h2 className="font-semibold">Demo Login Roles</h2>
+                <p className="text-sm">👤 Customer → Home</p>
+                <p className="text-sm">🛠️ Admin → Inventory</p>
+                <p className="text-sm">🚚 Delivery → Orders</p>
+              </CardContent>
+            </Card>
 
-        {/* Role buttons */}
-        <div className="grid grid-cols-3 gap-2 mb-4">
-          <button
-            onClick={() => fillDemoUser("customer")}
-            className="bg-gray-200 rounded-lg py-2">
-            Customer
-          </button>
+            {/* Role Buttons */}
+            <div className="grid grid-cols-3 gap-2">
+              <Button
+                variant="outline"
+                onClick={() => fillDemoUser("customer")}>
+                Customer
+              </Button>
 
-          <button
-            onClick={() => fillDemoUser("admin")}
-            className="bg-gray-200 rounded-lg py-2">
-            Admin
-          </button>
+              <Button variant="outline" onClick={() => fillDemoUser("admin")}>
+                Admin
+              </Button>
 
-          <button
-            onClick={() => fillDemoUser("delivery")}
-            className="bg-gray-200 rounded-lg py-2">
-            Delivery
-          </button>
-        </div>
+              <Button
+                variant="outline"
+                onClick={() => fillDemoUser("delivery")}>
+                Delivery
+              </Button>
+            </div>
 
-        <input
-          type="email"
-          placeholder="Email"
-          className="w-full border rounded-lg p-3 mb-3"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+            {/* Inputs */}
+            <Input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
 
-        <input
-          type="password"
-          placeholder="Password"
-          className="w-full border rounded-lg p-3 mb-4"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+            <Input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
 
-        {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
+            {/* Error */}
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
-        <button
-          onClick={handleLogin}
-          className="w-full bg-blue-500 text-white py-3 rounded-lg font-medium">
-          Login as {selectedRole}
-        </button>
+            {/* Login Button */}
+            <div className="flex justify-center">
+              <Button className="w-52" onClick={handleLogin}>
+                Login as {selectedRole}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
